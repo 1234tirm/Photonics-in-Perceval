@@ -1,0 +1,22 @@
+# Hong Ou Mandel effect
+
+import perceval as pcvl
+from perceval import PS, BS, pdisplay, Circuit
+import numpy as np
+from perceval.algorithm import Sampler
+
+input_state = pcvl.BasicState("|1, 1>")
+circuit = pcvl.Circuit(2) // pcvl.BS() 
+
+nsamples = 1000
+processor = pcvl.Processor('SLOS')
+processor.set_circuit(circuit)
+processor.min_detected_photons_filter(0)
+processor.with_input(input_state)
+
+sampler = Sampler(processor)
+prob = sampler.probs()['results']
+sample_distribution = sampler.sample_count(nsamples)['results']
+
+print(f"The output probability distribution: {prob}")
+print(f"The output sample distribution: {sample_distribution}")
