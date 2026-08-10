@@ -1,0 +1,18 @@
+from perceval.algorithm import Sampler
+
+input_state = pcvl.BasicState("|1, 1>")     # Inject one photon on each input mode
+circuit = pcvl.BS()             # of a perfect beam splitter
+noise_model = pcvl.NoiseModel(transmittance = 0.5, indistinguishability = 0.85, g2 = 0.03)      # Define some
+                            #                   noise level (No noise if transmittance = 1, indistinguishability = 1, g2 = 0)
+processor = pcvl.Processor("SLOS", circuit, noise = noise_model)        # Use SLOS, a strong simulation backend
+processor.min_detected_photons_filter(1)        # Accept all output states containing at least 1 photon
+processor.with_input(input_state)
+
+n_samples = 200_000     # Number of samples to generate
+
+sampler = Sampler(processor)
+samples = sampler.sample_count(n_samples)['results']
+probs = sampler.probs()['results']
+
+print(f"Samples: {samples}")
+print(f"Probabilities: {probs}")
