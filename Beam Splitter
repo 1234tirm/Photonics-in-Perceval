@@ -1,18 +1,68 @@
+# Import the essential package - primitive (Sampler) for running the job
 from perceval.algorithm import Sampler
 
+# define the input state, circuit and noise model
 input_state = pcvl.BasicState("|1, 1>")     # Inject one photon on each input mode
 circuit = pcvl.BS()             # of a perfect beam splitter
 noise_model = pcvl.NoiseModel(transmittance = 0.5, indistinguishability = 0.85, g2 = 0.03)      # Define some
                             #                   noise level (No noise if transmittance = 1, indistinguishability = 1, g2 = 0)
+
+# define the processor
 processor = pcvl.Processor("SLOS", circuit, noise = noise_model)        # Use SLOS, a strong simulation backend
 processor.min_detected_photons_filter(1)        # Accept all output states containing at least 1 photon
 processor.with_input(input_state)
 
+# define the number of samples and run the job
 n_samples = 200_000     # Number of samples to generate
 
 sampler = Sampler(processor)
 samples = sampler.sample_count(n_samples)['results']
 probs = sampler.probs()['results']
 
+# Output the result
 print(f"Samples: {samples}")
 print(f"Probabilities: {probs}")
+
+#Result
+Samples: {
+  |2,0>: 30795
+  |0,4>: 1
+  |3,0>: 244
+  |1,2>: 273
+  |1,1>: 5853
+  |2,1>: 265
+  |0,3>: 213
+  |0,2>: 30930
+  |1,0>: 65697
+  |0,1>: 65729
+}
+Probabilities: {
+	|4,0>: 2.293467191954118e-06
+	|2,2>: 5.3307615812987605e-06
+	|3,1>: 4.958847982603498e-06
+	|0,4>: 2.293467191954118e-06
+	|1,3>: 4.958847982603498e-06
+	|3,0>: 0.0011819882107378657
+	|1,2>: 0.0013827755330958176
+	|2,1>: 0.0013827755330958176
+	|0,3>: 0.0011819882107378657
+	|2,0>: 0.15356557707418145
+	|0,2>: 0.15356557707418145
+	|1,1>: 0.02958880519019805
+	|1,0>: 0.32906533889092066
+	|0,1>: 0.32906533889092066
+}
+
+# Run without noise in a simulator SLOS - Strong Linear Optic Simulation
+remote_processor = RemoteProcessor("sim:slos")  # RemoteProcessor is used to connect to the Quandela cloud
+remote_processor.set_circuit(circuit)    # setting the circuit
+remote_processor.min_detected_photons_filter(1)  # required when the noise is there
+remote_processor.with_input(input_state)
+
+remote_sampler = Sampler(remote_processor, max_shots_per_call = 1e6)
+remote_sampler.default_job_name = "Hello World!"
+remote_job = remote_sampler.sample_count.execute_async(n_samples)
+
+# Output 
+results = remote_job.get_results()
+pcvl.pdisplay(results['results'])
